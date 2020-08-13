@@ -1,0 +1,174 @@
+- job-template:
+    name: "PROD-Objectstorage-Tests/BM-COS-Sysdig-TEST/{project-name}"
+    project-type: freestyle
+    description: Perform Sysdig test suit.
+    disabled: false
+    node: "{build-node}"
+    properties:
+      - build-discarder:
+          num-to-keep: 50
+    parameters:
+      - string:
+          name: CLUSTER_TYPE
+          description:
+          default: bm
+      - string:
+          name: API_USER
+          description:
+          default: mapi_prod
+      - string:
+          name: BLUEMIX_CONFIG
+          description:
+          default: "/var/jenkins/objectstorage-tests-config/prod/bluemix_us_east.conf"
+      - string:
+          name: E2E_CONFIG
+          description:
+          default: "/var/jenkins/objectstorage-tests-config/prod/{config-name}"
+      - string:
+          name: IS_FULL_PROVISIONING
+          description:
+          default: "False"
+      - string:
+          name: VERIFY_RC_DELETES
+          description:
+          default: "False"
+      - string:
+          name: KP_ENABLED
+          description:
+          default: "False"
+      - string:
+          name: HMAC_ENABLED
+          description:
+          default: "False"
+
+    triggers:
+      - timed: "0 11 * * *"
+
+    wrappers:
+      - credentials-binding:
+          - text:
+              credential-id: prod-mapi-password
+              variable: API_PASSWORD
+          - text:
+              credential-id: prod-test-e2e-api-key
+              variable: E2E_API_KEY
+          - text:
+              credential-id: prod-mapi-password
+              variable: METRICS_API_PASSWORD
+          - text:
+              credential-id: prod-test-bss-password
+              variable: BSS_PASSWORD
+          - text:
+              credential-id: prod-imsuser2-password
+              variable: ACCESSOR_PASSWORD
+          - text:
+              credential-id: prod-test-broker-auth
+              variable: BROKER_AUTH
+          - text:
+              credential-id: prod-test-iam-auth
+              variable: IAM_AUTH
+          - text:
+              credential-id: prod-test-bss-password
+              variable: IAM_TEST_PASSWORD_1
+          - text:
+              credential-id: prod-test-bss-password
+              variable: IAM_TEST_PASSWORD_2
+          - text:
+              credential-id: prod-test-username-1-api-key
+              variable: USERNAME_1_API_KEY
+          - text:
+              credential-id: prod-test-username-2-api-key
+              variable: USERNAME_2_API_KEY
+          - text:
+              credential-id: prod-test-iam-service-api-key
+              variable: IAM_SERVICE_ID_API_KEY
+          - text:
+              credential-id: prod-test-secret-access-key
+              variable: SECRET_ACCESS_KEY
+          - text:
+              credential-id: prod-test-secret-access-key-2
+              variable: SECRET_ACCESS_KEY_2
+          - text:
+              credential-id: prod-test-metrics-us-south-hmac-secret-key
+              variable: METRICS_HMAC_SECRET_KEY
+          - text:
+              credential-id: prod-test-db-password
+              variable: DB_PASSWORD
+          - text:
+              credential-id: prod-test-aspera-broker-auth
+              variable: ASPERA_BROKER_AUTH
+          - text:
+              credential-id: "{sysdig-test-regional-api-token}"
+              variable: SYSDIG_API_TOKEN
+          - text:
+              credential-id: new-relic-api-key
+              variable: NR_API_KEY
+    builders:
+      - shell: |
+          # Variables
+          TEST_NAME=${project-name}
+          TEST_REGION=${build-node}
+          CLUSTER_TYPE_ARG=" --cluster-type "${{CLUSTER_TYPE}}
+          API_USER_ARG=" --api-user "${{API_USER}}
+          API_PASSWORD_ARG=" --api-pass "${{API_PASSWORD}}
+          BLUEMIX_CONFIG_ARG=" --bluemix-config "${{BLUEMIX_CONFIG}}
+          E2E_CONFIG_ARG=" --e2e_config "${{E2E_CONFIG}}
+          E2E_API_KEY_ARG=" --e2e-api-key "${{E2E_API_KEY}}
+          METRICS_API_PASSWORD_ARG=" --metrics-api-password "${{METRICS_API_PASSWORD}}
+          BSS_PASSWORD_ARG=" --bss-password "${{BSS_PASSWORD}}
+          ACCESSOR_PASSWORD_ARG=" --accessor-password "${{ACCESSOR_PASSWORD}}
+          BROKER_AUTH_ARG=" --broker-auth "${{BROKER_AUTH}}
+          IAM_AUTH_ARG=" --iam-auth "${{IAM_AUTH}}
+          IAM_TEST_PASSWORD_1_ARG=" --iam-test-password-1 "${{IAM_TEST_PASSWORD_1}}
+          IAM_TEST_PASSWORD_2_ARG=" --iam-test-password-2 "${{IAM_TEST_PASSWORD_2}}
+          USERNAME_1_API_KEY_ARG=" --username-1-api-key "${{USERNAME_1_API_KEY}}
+          USERNAME_2_API_KEY_ARG=" --username-2-api-key "${{USERNAME_2_API_KEY}}
+          IAM_SERVICE_ID_API_KEY_ARG=" --iam-service-id-api-key "${{IAM_SERVICE_ID_API_KEY}}
+          KP_ENABLED_ARG=" --kp_enabled "${{KP_ENABLED}}
+          HMAC_ENABLED_ARG=" --hmac_enabled "${{HMAC_ENABLED}}
+          DB_PASSWORD_ARG=" --db-password "${{DB_PASSWORD}}
+          SECRET_ACCESS_KEY_ARG=" --secret-access-key "${{SECRET_ACCESS_KEY}}
+          HMAC_SECRET_KEY_ARG=" --metrics_hmac_secret_key "${{METRICS_HMAC_SECRET_KEY}}
+          SECRET_ACCESS_KEY_2_ARG=" --secret-access-key-2 "${{SECRET_ACCESS_KEY_2}}
+          SYSDIG_API_TOKEN_ARG=" --sysdig-api-token "${{SYSDIG_API_TOKEN}}
+          NR_API_KEY_ARG=" --new-relic-insert-key "${{NR_API_KEY}}
+
+          VERBOSITY_ARG=" -v"
+          MARKER_ARG=" -m sysdig"
+
+          billing_test=$CLUSTER_TYPE_ARG$BLUEMIX_CONFIG_ARG$E2E_CONFIG_ARG$KAFKA_CONFIG_ARG$BILLING_PROCESSING_CONFIG_ARG$CASSANDRA_CONFIG_ARG$CONFIGURED_CASSANDRA_DATA_POINT_CONFIG_ARG$METRICS_API_CONFIG_ARG$API_USER_ARG$API_PASSWORD_ARG$E2E_API_KEY_ARG$METRICS_API_PASSWORD_ARG$BSS_PASSWORD_ARG$ACCESSOR_PASSWORD_ARG$BROKER_AUTH_ARG$IAM_AUTH_ARG$IAM_TEST_PASSWORD_1_ARG$IAM_TEST_PASSWORD_2_ARG$USERNAME_1_API_KEY_ARG$USERNAME_2_API_KEY_ARG$IAM_SERVICE_ID_API_KEY_ARG$KP_ENABLED_ARG$HMAC_ENABLED_ARG$DB_PASSWORD_ARG$SECRET_ACCESS_KEY_ARG$HMAC_SECRET_KEY_ARG$SECRET_ACCESS_KEY_2_ARG$SYSDIG_API_TOKEN_ARG$NR_API_KEY_ARG$MARKER_ARG$VERBOSITY_ARG
+
+          . /var/jenkins/objectstorage-tests-py3-5/bin/activate
+          cos-functests $billing_test
+
+    publishers:
+      - slack:
+          team-domain: "ibm-cloudplatform"
+          room: "#bm-cos-non-critical,#shared-services-pd"
+          auth-token: "ibm-cloudplatform-offering-token"
+          auth-token-id: "ibm-cloudplatform-offering-token"
+          commit-info-choice: NONE
+          notify-success: false
+          notify-aborted: true
+          notify-not-built: false
+          notify-unstable: false
+          notify-regression: false
+          notify-failure: true
+          notify-back-to-normal: true
+          notify-repeated-failure: true
+          include-custom-message: true
+          custom-message: "{slack-message}"
+      - email-ext:
+          recipients: mon-infrastructure-pd@ibm.pagerduty.com
+          reply-to: $PROJECT_DEFAULT_REPLYTO
+          content-type: html
+          subject: "Sysdig End-to-End PROD Test Monitor"
+          body: "Please check build log: $BUILD_URL"
+          failure: true
+          first-failure: false
+          second-failure: true
+          presend-script: $DEFAULT_PRESEND_SCRIPT
+          postsend-script: $DEFAULT_POSTSEND_SCRIPT
+          save-output: false
+          send-to:
+            - recipients
